@@ -1,0 +1,53 @@
+name: Build MyAI APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Check Gemini Secret
+        shell: bash
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::GEMINI_API_KEY secret is missing."
+            exit 1
+          fi
+          echo "GEMINI_API_KEY is configured."
+
+      - name: Configure local secret
+        shell: bash
+        run: |
+          printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" > local.properties
+
+      - name: Make Gradle executable
+        run: chmod +x gradlew
+
+      - name: Build APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyAI-APK
+          path: "**/build/outputs/apk/debug/*.apk"
+          if-no-files-found: error
