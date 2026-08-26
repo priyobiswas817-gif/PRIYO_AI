@@ -15,16 +15,18 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     steps:
+      # 1. GitHub repository-এর code নেওয়া
       - name: Checkout source
         uses: actions/checkout@v4
 
+      # 2. Java 17 সেটআপ
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
+      # 3. GitHub Secret আছে কিনা পরীক্ষা
       - name: Check Gemini Secret
         shell: bash
         run: |
@@ -32,19 +34,23 @@ jobs:
             echo "::error::GEMINI_API_KEY secret is missing."
             exit 1
           fi
-          echo "GEMINI_API_KEY is configured."
+          echo "Gemini Secret is configured."
 
-      - name: Configure local secret
+      # 4. Secret temporary local.properties-এ দেওয়া
+      - name: Configure Gemini Secret
         shell: bash
         run: |
           printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" > local.properties
 
+      # 5. Gradle wrapper executable করা
       - name: Make Gradle executable
         run: chmod +x gradlew
 
+      # 6. APK Build
       - name: Build APK
         run: ./gradlew assembleDebug
 
+      # 7. APK GitHub Artifact হিসেবে রাখা
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
